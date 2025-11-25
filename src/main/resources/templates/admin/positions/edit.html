@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+    <title layout:title-pattern="Edit Position - %s">Edit Position</title>
+</head>
+<body>
+
+<section layout:fragment="content">
+    <div class="content-header">
+        <h1>Edit Position</h1>
+        <div class="header-actions">
+            <a th:href="@{/admin/positions}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Error Messages -->
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <div class="form-container">
+        <form th:action="@{/admin/positions/{id}(id=${positionId})}" 
+              th:object="${positionRequest}" 
+              method="post"
+              class="form-horizontal">
+
+            <div class="form-group" th:classappend="${#fields.hasErrors('name')} ? 'has-error'">
+                <label for="name" class="form-label required">Position Name</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="name" 
+                       th:field="*{name}"
+                       placeholder="Enter position name"
+                       required>
+                <div class="error-message" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+            </div>
+
+            <div class="form-group" th:classappend="${#fields.hasErrors('abbreviation')} ? 'has-error'">
+                <label for="abbreviation" class="form-label required">Abbreviation</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="abbreviation" 
+                       th:field="*{abbreviation}"
+                       placeholder="Enter abbreviation"
+                       maxlength="50"
+                       required>
+                <div class="error-message" th:if="${#fields.hasErrors('abbreviation')}" th:errors="*{abbreviation}"></div>
+                <small class="form-text">Short name for the position (max 50 characters)</small>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Position
+                </button>
+                <a th:href="@{/admin/positions}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</section>
+
+</body>
+</html>

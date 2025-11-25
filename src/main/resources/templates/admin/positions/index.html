@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+    <title layout:title-pattern="Position Management - %s">Position Management</title>
+</head>
+<body>
+
+<section layout:fragment="content">
+    <div class="content-header">
+        <h1>Position Management</h1>
+        <div class="header-actions">
+            <a th:href="@{/admin/positions/create}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add New Position
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" role="alert">
+        <i class="fas fa-check-circle"></i>
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <form th:action="@{/admin/positions}" method="get" class="filter-form">
+            <div class="filter-row">
+                <div class="filter-item">
+                    <select name="size" class="form-control" onchange="this.form.submit()">
+                        <option th:each="pageSizeOption : ${pageSizeOptions}"
+                                th:value="${pageSizeOption}"
+                                th:selected="${currentPageSize == pageSizeOption}"
+                                th:text="${pageSizeOption} + ' per page'">
+                        </option>
+                    </select>
+                </div>
+            </div>
+            <input type="hidden" name="sortBy" th:value="${sortBy}">
+            <input type="hidden" name="sortDir" th:value="${sortDir}">
+        </form>
+    </div>
+
+    <!-- Results Info -->
+    <div class="results-info">
+        <p>Showing <strong th:text="${positions.content.size()}">0</strong> of <strong th:text="${totalItems}">0</strong> positions</p>
+    </div>
+
+    <!-- Positions Table -->
+    <div class="table-container">
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>
+                        <a th:href="@{/admin/positions(page=${currentPage}, size=${currentPageSize}, sortBy='id', sortDir=${sortBy == 'id' ? reverseSortDir : 'asc'})}">
+                            #
+                            <i class="fas" th:classappend="${sortBy == 'id' ? (sortDir == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"></i>
+                        </a>
+                    </th>
+                    <th>
+                        <a th:href="@{/admin/positions(page=${currentPage}, size=${currentPageSize}, sortBy='name', sortDir=${sortBy == 'name' ? reverseSortDir : 'asc'})}">
+                            Name
+                            <i class="fas" th:classappend="${sortBy == 'name' ? (sortDir == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"></i>
+                        </a>
+                    </th>
+                    <th>
+                        <a th:href="@{/admin/positions(page=${currentPage}, size=${currentPageSize}, sortBy='abbreviation', sortDir=${sortBy == 'abbreviation' ? reverseSortDir : 'asc'})}">
+                            Abbreviation
+                            <i class="fas" th:classappend="${sortBy == 'abbreviation' ? (sortDir == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"></i>
+                        </a>
+                    </th>
+                    <th>
+                        <a th:href="@{/admin/positions(page=${currentPage}, size=${currentPageSize}, sortBy='createdAt', sortDir=${sortBy == 'createdAt' ? reverseSortDir : 'desc'})}">
+                            Created At
+                            <i class="fas" th:classappend="${sortBy == 'createdAt' ? (sortDir == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"></i>
+                        </a>
+                    </th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${positions.isEmpty()}">
+                    <td colspan="5" class="text-center">No positions found</td>
+                </tr>
+                <tr th:each="position, stat : ${positions.content}">
+                    <td th:text="${positions.number * positions.size + stat.index + 1}"></td>
+                    <td th:text="${position.name}"></td>
+                    <td>
+                        <span class="badge badge-info" th:text="${position.abbreviation}"></span>
+                    </td>
+                    <td th:text="${position.createdAt != null ? #temporals.format(position.createdAt, 'dd/MM/yyyy HH:mm') : 'N/A'}"></td>
+                    <td class="action-buttons">
+                        <a th:href="@{/admin/positions/{id}(id=${position.id})}" 
+                           class="btn-icon btn-view" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a th:href="@{/admin/positions/{id}/edit(id=${position.id})}" 
+                           class="btn-icon btn-edit" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" 
+                                class="btn-icon btn-delete" 
+                                title="Delete" 
+                                th:data-position-id="${position.id}"
+                                th:data-position-name="${position.name}"
+                                onclick="confirmDeletePosition(this.dataset.positionId, this.dataset.positionName)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" th:if="${totalPages > 1}">
+        <div class="pagination">
+            <!-- First Page -->
+            <a th:href="@{/admin/positions(page=0, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+               class="page-link"
+               th:classappend="${currentPage == 0 ? 'disabled' : ''}"
+               th:aria-disabled="${currentPage == 0}">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+            
+            <!-- Previous Page -->
+            <a th:href="@{/admin/positions(page=${currentPage - 1}, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+               class="page-link"
+               th:classappend="${currentPage == 0 ? 'disabled' : ''}"
+               th:aria-disabled="${currentPage == 0}">
+                <i class="fas fa-angle-left"></i>
+            </a>
+            
+            <!-- Page Numbers -->
+            <th:block th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:if="${pageNum < 2 || pageNum >= totalPages - 2 || (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)}"
+                   th:href="@{/admin/positions(page=${pageNum}, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                   class="page-link"
+                   th:classappend="${pageNum == currentPage ? 'active' : ''}"
+                   th:text="${pageNum + 1}">1</a>
+                
+                <span th:if="${pageNum == 2 && currentPage > 3}" class="page-ellipsis">...</span>
+                <span th:if="${pageNum == totalPages - 3 && currentPage < totalPages - 4}" class="page-ellipsis">...</span>
+            </th:block>
+            
+            <!-- Next Page -->
+            <a th:href="@{/admin/positions(page=${currentPage + 1}, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+               class="page-link"
+               th:classappend="${currentPage >= totalPages - 1 ? 'disabled' : ''}"
+               th:aria-disabled="${currentPage >= totalPages - 1}">
+                <i class="fas fa-angle-right"></i>
+            </a>
+            
+            <!-- Last Page -->
+            <a th:href="@{/admin/positions(page=${totalPages - 1}, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+               class="page-link"
+               th:classappend="${currentPage >= totalPages - 1 ? 'disabled' : ''}"
+               th:aria-disabled="${currentPage >= totalPages - 1}">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+        </div>
+        
+        <div class="pagination-info">
+            Page <strong th:text="${currentPage + 1}">1</strong> of <strong th:text="${totalPages}">10</strong>
+        </div>
+    </div>
+</section>
+
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        function confirmDeletePosition(positionId, positionName) {
+            if (confirm('Are you sure you want to delete position "' + positionName + '"?')) {
+                fetch('/admin/positions/' + positionId, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Position deleted successfully');
+                        window.location.reload();
+                    } else {
+                        response.json().then(error => {
+                            alert('Failed to delete position: ' + (error.message || 'Server Error'));
+                        }).catch(() => {
+                            alert('Failed to delete position');
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the position');
+                });
+            }
+        }
+    </script>
+</th:block>
+
+</body>
+</html>
