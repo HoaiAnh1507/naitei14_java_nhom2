@@ -18,11 +18,13 @@ public class TeamLeadershipHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "team_id", nullable = false)
-    private Long teamId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = false, foreignKey = @ForeignKey(name = "fk_tlh_team"))
+    private Team team;
 
-    @Column(name = "leader_id", nullable = false)
-    private Long leaderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "leader_id", nullable = false, foreignKey = @ForeignKey(name = "fk_tlh_leader"))
+    private User leader;
 
     @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt;

@@ -16,6 +16,7 @@ import vn.sun.membermanagementsystem.repositories.TeamRepository;
 import vn.sun.membermanagementsystem.services.TeamService;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -111,5 +112,14 @@ public class TeamServiceImpl implements TeamService {
 
         log.info("Team detail retrieved successfully for ID: {}", id);
         return detailDTO;
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<TeamDTO> getAllTeams() {
+        log.info("Getting all teams");
+        
+        List<Team> teams = teamRepository.findAllNotDeleted();
+        return teamMapper.toDTOList(teams);
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.sun.membermanagementsystem.entities.Team;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,4 +20,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     @Query("SELECT t FROM Team t WHERE t.id = :id AND t.deletedAt IS NULL")
     Optional<Team> findByIdAndNotDeleted(@Param("id") Long id);
+    
+    @Query("SELECT t FROM Team t WHERE t.deletedAt IS NULL ORDER BY t.name")
+    List<Team> findAllNotDeleted();
 }

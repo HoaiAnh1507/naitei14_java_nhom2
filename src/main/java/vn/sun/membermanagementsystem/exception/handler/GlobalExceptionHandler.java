@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import vn.sun.membermanagementsystem.dto.response.ApiResponse;
 import vn.sun.membermanagementsystem.exception.*;
 
@@ -134,6 +135,14 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.internalError("Database error occurred. Please try again later."));
     }
+
+    // @ExceptionHandler(NoResourceFoundException.class)
+    // public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(NoResourceFoundException ex) {
+    //     log.warn("Static resource not found: {}", ex.getMessage());
+    //     return ResponseEntity
+    //             .status(HttpStatus.NOT_FOUND)
+    //             .body(ApiResponse.notFound("Resource not found"));
+    // }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {

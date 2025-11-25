@@ -5,3 +5,7 @@ spring:
     url: jdbc:mysql://@YOUR_HOST:@YOUR_PORT/member_management?createDatabaseIfNotExist=true
     username: @YOUR_DB_USERNAME
     password: @YOUR_DB_PASSWORD
+  security:
+    user: #mock user de dang nhap vao he thong
+      name: admin
+      password: $2a$12$RED9HPAsfxcaSyqQL.CNk.m9YHyncFFHz4medycLi50qgEnZ0Mcu2 # mat khau la "123qwe!@#"

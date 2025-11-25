@@ -24,5 +24,6 @@ public class UserSummaryDTO {
     private UserStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String activeTeam;
 }
 

@@ -5,6 +5,8 @@ import vn.sun.membermanagementsystem.dto.request.UpdateTeamRequest;
 import vn.sun.membermanagementsystem.dto.response.TeamDTO;
 import vn.sun.membermanagementsystem.dto.response.TeamDetailDTO;
 
+import java.util.List;
+
 public interface TeamService {
 
     TeamDTO createTeam(CreateTeamRequest request);
@@ -14,4 +16,6 @@ public interface TeamService {
     boolean deleteTeam(Long id);
 
     TeamDetailDTO getTeamDetail(Long id);
+    
+    List<TeamDTO> getAllTeams();
 }
