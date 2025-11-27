@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+    <title>View Skill</title>
+    <style>
+        .detail-card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 0.5rem;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+        .detail-value {
+            font-size: 1.1rem;
+            color: #212529;
+            padding: 0.75rem;
+            background-color: #f8f9fa;
+            border-radius: 0.375rem;
+            border-left: 3px solid #0d6efd;
+        }
+        .description-box {
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+        .badge-custom {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+        }
+        .icon-label {
+            color: #0d6efd;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>
+                        <i class="fas fa-lightbulb icon-label"></i>
+                        Skill Details
+                    </h2>
+                    <div>
+                        <a th:href="@{/admin/skills/{id}/edit(id=${skill.id})}" 
+                           class="btn btn-warning me-2">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a th:href="@{/admin/skills}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span th:text="${errorMessage}"></span>
+                </div>
+
+                <!-- Skill Information Card -->
+                <div class="card detail-card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-info-circle"></i> Basic Information
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- ID -->
+                            <div class="col-md-6 mb-4">
+                                <div class="detail-label">
+                                    <i class="fas fa-hashtag icon-label"></i>ID
+                                </div>
+                                <div class="detail-value">
+                                    <span th:text="${skill.id}">1</span>
+                                </div>
+                            </div>
+
+                            <!-- Name -->
+                            <div class="col-md-6 mb-4">
+                                <div class="detail-label">
+                                    <i class="fas fa-tag icon-label"></i>Skill Name
+                                </div>
+                                <div class="detail-value">
+                                    <span class="badge bg-primary badge-custom" th:text="${skill.name}">Java</span>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="col-md-12 mb-4">
+                                <div class="detail-label">
+                                    <i class="fas fa-align-left icon-label"></i>Description
+                                </div>
+                                <div class="detail-value description-box">
+                                    <span th:text="${skill.description ?: 'No description provided'}">
+                                        Programming language description
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metadata Card -->
+                <div class="card detail-card">
+                    <div class="card-header bg-secondary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-clock"></i> Metadata
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Created At -->
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-label">
+                                    <i class="fas fa-calendar-plus icon-label"></i>Created At
+                                </div>
+                                <div class="detail-value">
+                                    <span th:text="${#temporals.format(skill.createdAt, 'yyyy-MM-dd HH:mm:ss')}">
+                                        2024-01-01 10:00:00
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Updated At -->
+                            <div class="col-md-6 mb-3">
+                                <div class="detail-label">
+                                    <i class="fas fa-calendar-check icon-label"></i>Last Updated
+                                </div>
+                                <div class="detail-value">
+                                    <span th:text="${#temporals.format(skill.updatedAt, 'yyyy-MM-dd HH:mm:ss')}">
+                                        2024-01-01 10:00:00
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

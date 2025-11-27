@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+    <title>Skills Management</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Skills Management</h2>
+            <a th:href="@{/admin/skills/create}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add New Skill
+            </a>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Skills Table -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>
+                                <a th:href="@{/admin/skills(page=${currentPage}, size=${currentPageSize}, sortBy='id', sortDir=${sortBy == 'id' && sortDir == 'asc' ? 'desc' : 'asc'})}">
+                                    ID
+                                    <i th:if="${sortBy == 'id'}" 
+                                       th:class="${sortDir == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'}"></i>
+                                </a>
+                            </th>
+                            <th>
+                                <a th:href="@{/admin/skills(page=${currentPage}, size=${currentPageSize}, sortBy='name', sortDir=${sortBy == 'name' && sortDir == 'asc' ? 'desc' : 'asc'})}">
+                                    Name
+                                    <i th:if="${sortBy == 'name'}" 
+                                       th:class="${sortDir == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'}"></i>
+                                </a>
+                            </th>
+                            <th>Description</th>
+                            <th>
+                                <a th:href="@{/admin/skills(page=${currentPage}, size=${currentPageSize}, sortBy='createdAt', sortDir=${sortBy == 'createdAt' && sortDir == 'asc' ? 'desc' : 'asc'})}">
+                                    Created At
+                                    <i th:if="${sortBy == 'createdAt'}" 
+                                       th:class="${sortDir == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'}"></i>
+                                </a>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="skill : ${skills.content}">
+                            <td th:text="${skill.id}">1</td>
+                            <td>
+                                <a th:href="@{/admin/skills/{id}(id=${skill.id})}" 
+                                   th:text="${skill.name}" 
+                                   class="text-decoration-none">Java</a>
+                            </td>
+                            <td th:text="${#strings.abbreviate(skill.description, 100)}">Programming language</td>
+                            <td th:text="${#temporals.format(skill.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 10:00</td>
+                            <td>
+                                <a th:href="@{/admin/skills/{id}(id=${skill.id})}" 
+                                   class="btn btn-sm btn-info" 
+                                   title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a th:href="@{/admin/skills/{id}/edit(id=${skill.id})}" 
+                                   class="btn btn-sm btn-warning" 
+                                   title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger delete-btn" 
+                                        th:data-id="${skill.id}"
+                                        th:data-name="${skill.name}"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(skills.content)}">
+                            <td colspan="5" class="text-center">No skills found</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container" th:if="${totalPages > 1}">
+                    <div class="pagination">
+                        <!-- First Page -->
+                        <a th:href="@{/admin/skills(page=0, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                           class="page-link"
+                           th:classappend="${currentPage == 0 ? 'disabled' : ''}"
+                           th:aria-disabled="${currentPage == 0}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        
+                        <!-- Previous Page -->
+                        <a th:href="@{/admin/skills(page=${currentPage - 1}, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                           class="page-link"
+                           th:classappend="${currentPage == 0 ? 'disabled' : ''}"
+                           th:aria-disabled="${currentPage == 0}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                        
+                        <!-- Page Numbers -->
+                        <th:block th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}">
+                            <a th:if="${pageNum < 2 || pageNum >= totalPages - 2 || (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)}"
+                               th:href="@{/admin/skills(page=${pageNum}, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                               class="page-link"
+                               th:classappend="${pageNum == currentPage ? 'active' : ''}"
+                               th:text="${pageNum + 1}">1</a>
+                            
+                            <span th:if="${pageNum == 2 && currentPage > 3}" class="page-ellipsis">...</span>
+                            <span th:if="${pageNum == totalPages - 3 && currentPage < totalPages - 4}" class="page-ellipsis">...</span>
+                        </th:block>
+                        
+                        <!-- Next Page -->
+                        <a th:href="@{/admin/skills(page=${currentPage + 1}, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                           class="page-link"
+                           th:classappend="${currentPage >= totalPages - 1 ? 'disabled' : ''}"
+                           th:aria-disabled="${currentPage >= totalPages - 1}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        
+                        <!-- Last Page -->
+                        <a th:href="@{/admin/skills(page=${totalPages - 1}, size=${currentPageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                           class="page-link"
+                           th:classappend="${currentPage >= totalPages - 1 ? 'disabled' : ''}"
+                           th:aria-disabled="${currentPage >= totalPages - 1}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="pagination-info">
+                        Page <strong th:text="${currentPage + 1}">1</strong> of <strong th:text="${totalPages}">10</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Script -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            
+            // Get CSRF token
+            const csrfToken = /*[[${_csrf.token}]]*/ '';
+            const csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+            
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const skillId = this.getAttribute('data-id');
+                    const skillName = this.getAttribute('data-name');
+                    
+                    if (confirm(`Are you sure you want to delete skill "${skillName}"?`)) {
+                        const headers = {
+                            'Content-Type': 'application/json'
+                        };
+                        
+                        // Add CSRF token to headers
+                        if (csrfToken && csrfHeader) {
+                            headers[csrfHeader] = csrfToken;
+                        }
+                        
+                        fetch(`/admin/skills/${skillId}`, {
+                            method: 'DELETE',
+                            headers: headers
+                        })
+                        .then(response => response.text())
+                        .then(data => {
+                            if (data === 'success') {
+                                window.location.reload();
+                            } else {
+                                alert('Error deleting skill: ' + data);
+                            }
+                        })
+                        .catch(error => {
+                            alert('Error deleting skill: ' + error);
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</div>
+</body>
+</html>
