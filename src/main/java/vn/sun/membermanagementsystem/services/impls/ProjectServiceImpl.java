@@ -6,24 +6,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import vn.sun.membermanagementsystem.annotation.LogActivity;
-import vn.sun.membermanagementsystem.entities.User;
-
 import vn.sun.membermanagementsystem.dto.request.CreateProjectRequest;
+import vn.sun.membermanagementsystem.dto.request.UpdateProjectRequest;
 import vn.sun.membermanagementsystem.dto.response.ProjectDTO;
 import vn.sun.membermanagementsystem.dto.response.ProjectDetailDTO;
-import vn.sun.membermanagementsystem.dto.response.ProjectLeadershipHistoryDTO;
-import vn.sun.membermanagementsystem.dto.response.ProjectMemberDTO;
-import vn.sun.membermanagementsystem.entities.*;
-import vn.sun.membermanagementsystem.enums.MembershipStatus; // Import Enum
+import vn.sun.membermanagementsystem.entities.Project;
+import vn.sun.membermanagementsystem.entities.Team;
 import vn.sun.membermanagementsystem.mapper.ProjectMapper;
-import vn.sun.membermanagementsystem.repositories.*;
+import vn.sun.membermanagementsystem.repositories.ProjectRepository;
+import vn.sun.membermanagementsystem.services.ProjectLeadershipService;
+import vn.sun.membermanagementsystem.services.ProjectMemberService;
 import vn.sun.membermanagementsystem.services.ProjectService;
 import vn.sun.membermanagementsystem.services.TeamService;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,82 +31,29 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepo;
     private final ProjectMapper projectMapper;
     private final TeamService teamService;
-    private final ProjectLeadershipHistoryRepository leadershipRepo;
-    private final ProjectMemberRepository projectMemberRepo;
-    private final UserRepository userRepo;
 
-    private final TeamMemberRepository teamMemberRepo;
+    private final ProjectMemberService membershipService;
+    private final ProjectLeadershipService leadershipService;
 
     @Override
     public Page<ProjectDTO> getAllProjects(Long teamId, Pageable pageable) {
-        Page<Project> projectsPage;
-
         if (teamId != null) {
             Team team = teamService.getRequiredTeam(teamId);
-            projectsPage = projectRepo.findByTeam(team, pageable);
-        } else {
-            projectsPage = projectRepo.findAll(pageable);
+            return projectRepo.findByTeam(team, pageable).map(projectMapper::toDTO);
         }
-
-        return projectsPage.map(projectMapper::toDTO);
+        return projectRepo.findAll(pageable).map(projectMapper::toDTO);
     }
 
     @Override
     public ProjectDetailDTO getProjectDetail(Long id) {
         Project project = projectRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
-
-        ProjectDTO basicDto = projectMapper.toDTO(project);
-        ProjectDetailDTO detailDTO = new ProjectDetailDTO();
-
-        detailDTO.setId(basicDto.getId());
-        detailDTO.setName(basicDto.getName());
-        detailDTO.setAbbreviation(basicDto.getAbbreviation());
-        detailDTO.setStartDate(basicDto.getStartDate());
-        detailDTO.setEndDate(basicDto.getEndDate());
-        detailDTO.setStatus(basicDto.getStatus());
-        detailDTO.setTeamId(basicDto.getTeamId());
-        detailDTO.setTeamName(basicDto.getTeamName());
-        detailDTO.setCreatedAt(basicDto.getCreatedAt());
-        detailDTO.setUpdatedAt(basicDto.getUpdatedAt());
-
-        List<ProjectMemberDTO> memberDTOs = project.getProjectMembers().stream()
-                .sorted(Comparator.comparing(ProjectMember::getJoinedAt).reversed())
-                .map(pm -> ProjectMemberDTO.builder()
-                        .id(pm.getId())
-                        .userId(pm.getUser().getId())
-                        .userName(pm.getUser().getName())
-                        .userEmail(pm.getUser().getEmail())
-                        .status(pm.getStatus().name())
-                        .joinedAt(pm.getJoinedAt())
-                        .leftAt(pm.getLeftAt())
-                        .build())
-                .collect(Collectors.toList());
-        detailDTO.setMembers(memberDTOs);
-
-        List<ProjectLeadershipHistoryDTO> historyDTOs = project.getLeadershipHistory().stream()
-                .sorted(Comparator.comparing(ProjectLeadershipHistory::getStartedAt).reversed())
-                .map(hist -> ProjectLeadershipHistoryDTO.builder()
-                        .id(hist.getId())
-                        .leaderName(hist.getLeader().getName())
-                        .leaderEmail(hist.getLeader().getEmail())
-                        .startedAt(hist.getStartedAt())
-                        .endedAt(hist.getEndedAt())
-                        .isCurrent(hist.getEndedAt() == null)
-                        .build())
-                .collect(Collectors.toList());
-        detailDTO.setLeadershipHistory(historyDTOs);
-
-        return detailDTO;
+        return projectMapper.toDetailDTO(project);
     }
 
     @Override
     @Transactional
-    @LogActivity(
-            action = "CREATE_PROJECT",
-            entityType = "PROJECT",
-            description = "Create new project"
-    )
+    @LogActivity(action = "CREATE_PROJECT", entityType = "PROJECT", description = "Create new project")
     public ProjectDTO createProject(CreateProjectRequest request) {
         Project project = new Project();
         project.setName(request.getName());
@@ -117,64 +62,86 @@ public class ProjectServiceImpl implements ProjectService {
         project.setEndDate(request.getEndDate());
         project.setStatus(Project.ProjectStatus.PLANNING);
 
-        if (request.getTeamId() != null) {
-            Team team = teamService.getRequiredTeam(request.getTeamId());
-            project.setTeam(team);
+        project = projectRepo.save(project);
 
-            project = projectRepo.save(project);
-
-            if (request.getLeaderId() != null) {
-                User leader = userRepo.findById(request.getLeaderId())
-                        .orElseThrow(() -> new EntityNotFoundException("Leader not found"));
-
-                boolean isLeaderInTeam = teamMemberRepo.existsByUserAndTeamAndStatus(leader, team, MembershipStatus.ACTIVE);
-                if (!isLeaderInTeam) {
-                    throw new IllegalArgumentException("Selected Leader is not an active member of the chosen team");
-                }
-
-                ProjectLeadershipHistory history = new ProjectLeadershipHistory();
-                history.setProject(project);
-                history.setLeader(leader);
-                history.setStartedAt(java.time.LocalDateTime.now());
-                leadershipRepo.save(history);
-
-                saveProjectMember(project, leader);
-            }
-
-            List<Long> memberIds = request.getMemberIds();
-            if (memberIds != null && !memberIds.isEmpty()) {
-                for (Long userId : memberIds) {
-                    if (request.getLeaderId() != null && userId.equals(request.getLeaderId())) {
-                        continue;
-                    }
-
-                    User user = userRepo.findById(userId)
-                            .orElseThrow(() -> new EntityNotFoundException("User not found id: " + userId));
-
-                    boolean isUserInTeam = teamMemberRepo.existsByUserAndTeamAndStatus(user, team, MembershipStatus.ACTIVE);
-                    if (!isUserInTeam) {
-                        throw new IllegalArgumentException("User " + user.getName() + " is not active in this team");
-                    }
-
-                    saveProjectMember(project, user);
-                }
-            }
-        } else {
-            project = projectRepo.save(project);
-        }
+        handleProjectContext(project, request.getTeamId(), request.getLeaderId(), request.getMemberIds());
 
         return projectMapper.toDTO(project);
     }
 
-    private void saveProjectMember(Project project, User user) {
-        boolean exists = projectMemberRepo.existsByProjectAndUserAndStatus(project, user, ProjectMember.MemberStatus.ACTIVE);
-        if (!exists) {
-            ProjectMember projectMember = new ProjectMember();
-            projectMember.setProject(project);
-            projectMember.setUser(user);
-            projectMember.setJoinedAt(java.time.LocalDateTime.now());
-            projectMember.setStatus(ProjectMember.MemberStatus.ACTIVE);
-            projectMemberRepo.save(projectMember);
+    @Override
+    @Transactional
+    @LogActivity(action = "UPDATE_PROJECT", entityType = "PROJECT", description = "Update project")
+    public ProjectDTO updateProject(Long id, UpdateProjectRequest request) {
+        Project project = projectRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
+
+        project.setName(request.getName());
+        project.setAbbreviation(request.getAbbreviation());
+        project.setStartDate(request.getStartDate());
+        project.setEndDate(request.getEndDate());
+
+        project = projectRepo.save(project);
+
+        handleProjectContext(project, request.getTeamId(), request.getLeaderId(), request.getMemberIds());
+
+        return projectMapper.toDTO(project);
+    }
+
+    private void handleProjectContext(Project project, Long teamId, Long leaderId, List<Long> memberIds) {
+        Team oldTeam = project.getTeam();
+        Team newTeam = teamId != null ? teamService.getRequiredTeam(teamId) : null;
+
+        if (!Objects.equals(oldTeam, newTeam)) {
+            if (oldTeam != null && newTeam == null) {
+                leadershipService.endAllLeadership(project);
+                membershipService.removeAllMembers(project);
+                project.setTeam(null);
+            } else {
+                project.setTeam(newTeam);
+            }
+            project = projectRepo.save(project);
         }
+
+        membershipService.syncMembers(project, memberIds, leaderId, newTeam);
+
+        leadershipService.updateLeader(project, leaderId, newTeam);
+
+        if (leaderId != null) {
+            membershipService.ensureUserIsActiveMember(project, leaderId, newTeam);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UpdateProjectRequest getUpdateProjectRequest(Long id) {
+        Project project = projectRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + id));
+
+        UpdateProjectRequest req = new UpdateProjectRequest();
+        req.setId(project.getId());
+        req.setName(project.getName());
+        req.setAbbreviation(project.getAbbreviation());
+        req.setStartDate(project.getStartDate());
+        req.setEndDate(project.getEndDate());
+
+        if (project.getTeam() != null) {
+            req.setTeamId(project.getTeam().getId());
+        }
+
+        project.getLeadershipHistory().stream()
+                .filter(h -> h.getEndedAt() == null)
+                .findFirst()
+                .ifPresent(h -> req.setLeaderId(h.getLeader().getId()));
+
+
+        List<Long> activeMemberIds = project.getProjectMembers().stream()
+                .filter(pm -> pm.getStatus() == vn.sun.membermanagementsystem.entities.ProjectMember.MemberStatus.ACTIVE)
+                .map(pm -> pm.getUser().getId())
+                .collect(Collectors.toList());
+
+        req.setMemberIds(activeMemberIds);
+
+        return req;
     }
 }

@@ -12,13 +12,13 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.sun.membermanagementsystem.dto.request.CreateProjectRequest;
-import vn.sun.membermanagementsystem.dto.response.ProjectDTO;
-import vn.sun.membermanagementsystem.dto.response.ProjectDetailDTO;
-import vn.sun.membermanagementsystem.dto.response.UserSelectionDTO;
+import vn.sun.membermanagementsystem.dto.request.UpdateProjectRequest;
+import vn.sun.membermanagementsystem.dto.response.*;
 import vn.sun.membermanagementsystem.services.ProjectService;
 import vn.sun.membermanagementsystem.services.TeamService;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/projects")
@@ -105,4 +105,57 @@ public class AdminProjectController {
         List<UserSelectionDTO> users = teamService.getActiveUsersByTeam(teamId);
         return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/edit/{id}")
+    public String showEditForm(@PathVariable Long id, Model model) {
+        if (!model.containsAttribute("projectRequest")) {
+            UpdateProjectRequest req = projectService.getUpdateProjectRequest(id);
+            model.addAttribute("projectRequest", req);
+        }
+
+        UpdateProjectRequest currentReq = (UpdateProjectRequest) model.getAttribute("projectRequest");
+
+        populateFormData(model, currentReq.getTeamId());
+
+        model.addAttribute("projectId", id);
+
+        return "admin/projects/edit";
+    }
+
+    @PostMapping("/edit/{id}")
+    public String updateProject(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("projectRequest") UpdateProjectRequest request,
+            BindingResult result,
+            Model model,
+            RedirectAttributes redirectAttributes
+    ) {
+        if (result.hasErrors()) {
+            populateFormData(model, request.getTeamId());
+            model.addAttribute("projectId", id);
+            return "admin/projects/edit";
+        }
+
+        try {
+            ProjectDTO updated = projectService.updateProject(id, request);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Project '" + updated.getName() + "' updated successfully!");
+            return "redirect:/admin/projects/" + updated.getId();
+        } catch (IllegalArgumentException e) {
+            result.reject("error.business", e.getMessage());
+            populateFormData(model, request.getTeamId());
+            model.addAttribute("projectId", id);
+            return "admin/projects/edit";
+        }
+    }
+
+    private void populateFormData(Model model, Long teamId) {
+        model.addAttribute("teams", teamService.getAllTeams());
+        if (teamId != null) {
+            model.addAttribute("preloadedUsers", teamService.getActiveUsersByTeam(teamId));
+        } else {
+            model.addAttribute("preloadedUsers", List.of());
+        }
+    }
+
 }

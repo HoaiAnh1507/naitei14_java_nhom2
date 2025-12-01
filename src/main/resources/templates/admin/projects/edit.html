@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin-layout}">
+<head>
+  <title>Edit Project</title>
+  <link rel="stylesheet" th:href="@{/css/user-form.css?v=1.3}" />
+</head>
+<body>
+
+<section layout:fragment="content">
+
+  <div class="content-header">
+    <h1>Edit Project: <span th:text="${projectRequest.name}"></span></h1>
+    <div class="header-actions">
+      <a th:href="@{/admin/projects}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Cancel
+      </a>
+    </div>
+  </div>
+
+  <div class="form-container">
+    <form th:action="@{/admin/projects/edit/{id}(id=${projectId})}" th:object="${projectRequest}" method="post">
+
+      <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+      <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+        <p th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
+      </div>
+
+      <fieldset>
+        <legend>Project Details</legend>
+        <div class="form-group">
+          <label>Project Name *</label>
+          <input type="text" th:field="*{name}" class="form-control" required />
+          <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="text-danger"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Abbreviation *</label>
+          <input type="text" th:field="*{abbreviation}" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label>Start Date *</label>
+          <input type="date" th:field="*{startDate}" id="startDate" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" th:field="*{endDate}" id="endDate" class="form-control" />
+          <small id="dateError" class="text-danger" style="display:none;">End Date must be strictly after Start Date.</small>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Team & Personnel</legend>
+
+        <div class="alert alert-warning" id="teamChangeAlert" style="display:none; margin-bottom: 15px;">
+          <i class="fas fa-exclamation-triangle"></i>
+          <strong>Warning:</strong> Changing the team will reset the current Leader and Member selections.
+        </div>
+
+        <div class="form-group">
+          <label>Select Team</label>
+          <select th:field="*{teamId}" id="teamSelect" class="form-control" onchange="onTeamChange(this.value)">
+            <option value="">-- No Team --</option>
+            <option th:each="team : ${teams}" th:value="${team.id}" th:text="${team.name}"></option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Assign Leader</label>
+          <select th:field="*{leaderId}" id="leaderSelect" class="form-control">
+            <option value="">-- Select Leader --</option>
+            <option th:if="${preloadedUsers != null}"
+                    th:each="u : ${preloadedUsers}"
+                    th:value="${u.id}"
+                    th:text="${u.name + ' (' + u.email + ')'}"
+                    th:selected="${u.id == projectRequest.leaderId}">
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Select Members</label>
+          <small class="text-muted d-block mb-1">Hold <strong>Ctrl</strong>/<strong>Cmd</strong> to select multiple.</small>
+          <select th:field="*{memberIds}" id="membersSelect" class="form-control" multiple="multiple" style="height:150px;">
+            <option th:if="${preloadedUsers != null}"
+                    th:each="u : ${preloadedUsers}"
+                    th:value="${u.id}"
+                    th:text="${u.name + ' (' + u.email + ')'}"
+                    th:selected="${projectRequest.memberIds != null && projectRequest.memberIds.contains(u.id)}">
+            </option>
+          </select>
+        </div>
+      </fieldset>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Update Project</button>
+      </div>
+    </form>
+  </div>
+
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    var contextPath = /*[[@{/}]]*/ '/';
+    var originalTeamId = /*[[${projectRequest.teamId}]]*/ null;
+
+    function onTeamChange(teamId) {
+      var leaderSelect = document.getElementById('leaderSelect');
+      var membersSelect = document.getElementById('membersSelect');
+      var alertBox = document.getElementById('teamChangeAlert');
+
+      if (alertBox) {
+        if (originalTeamId && String(teamId) !== String(originalTeamId)) {
+          alertBox.style.display = 'block';
+        } else {
+          alertBox.style.display = 'none';
+        }
+      }
+
+      leaderSelect.innerHTML = '<option value="">-- Select Leader --</option>';
+      membersSelect.innerHTML = '';
+
+      if (!teamId) {
+        leaderSelect.disabled = true;
+        membersSelect.disabled = true;
+        return;
+      }
+
+      leaderSelect.disabled = false;
+      membersSelect.disabled = false;
+      leaderSelect.innerHTML = '<option value="">-- Loading... --</option>';
+
+      var apiUrl = contextPath + 'admin/projects/api/teams/' + teamId + '/users';
+      apiUrl = apiUrl.replace('//', '/');
+
+      fetch(apiUrl)
+              .then(function(resp) {
+                if (!resp.ok) throw new Error("Network response was not ok");
+                return resp.json();
+              })
+              .then(function(users) {
+                leaderSelect.innerHTML = '<option value="">-- Select Leader --</option>';
+                membersSelect.innerHTML = '';
+
+                if (users && users.length > 0) {
+                  users.forEach(function(u) {
+                    var label = u.name + ' (' + u.email + ')';
+
+                    var optLeader = document.createElement('option');
+                    optLeader.value = u.id;
+                    optLeader.text = label;
+                    leaderSelect.add(optLeader);
+
+                    var optMember = document.createElement('option');
+                    optMember.value = u.id;
+                    optMember.text = label;
+                    membersSelect.add(optMember);
+                  });
+                } else {
+                  leaderSelect.innerHTML = '<option value="">-- No users in team --</option>';
+                }
+              })
+              .catch(function(err) {
+                console.error("Error:", err);
+                leaderSelect.innerHTML = '<option value="">Error loading users</option>';
+              });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var teamSelect = document.getElementById('teamSelect');
+      if (teamSelect && !teamSelect.value) {
+        var leader = document.getElementById('leaderSelect');
+        var member = document.getElementById('membersSelect');
+        if(leader) leader.disabled = true;
+        if(member) member.disabled = true;
+      }
+
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      const dateError = document.getElementById('dateError');
+
+      if(startDateInput && endDateInput) {
+        function updateDateConstraints() {
+          const startDateVal = startDateInput.value;
+          if (startDateVal) {
+            const startDate = new Date(startDateVal);
+            startDate.setDate(startDate.getDate() + 1);
+            const minDateISO = startDate.toISOString().split('T')[0];
+            endDateInput.min = minDateISO;
+            if (endDateInput.value && endDateInput.value < minDateISO) {
+              endDateInput.value = '';
+              if(dateError) dateError.style.display = 'block';
+            } else {
+              if(dateError) dateError.style.display = 'none';
+            }
+          } else {
+            endDateInput.removeAttribute('min');
+          }
+        }
+        startDateInput.addEventListener('change', updateDateConstraints);
+        endDateInput.addEventListener('change', function() {
+          if(startDateInput.value && this.value && this.value <= startDateInput.value) {
+            if(dateError) dateError.style.display = 'block';
+            this.value = '';
+          } else {
+            if(dateError) dateError.style.display = 'none';
+          }
+        });
+        updateDateConstraints();
+      }
+    });
+    /*]]>*/
+  </script>
+
+</section>
+</body>
+</html>
