@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layouts/admin-layout}"
+>
+  <head>
+    <title layout:title-pattern="Edit Team - %s">Edit Team</title>
+    <link rel="stylesheet" th:href="@{/css/user-form.css?v=1.3}" />
+    <style>
+      /* Member Management Styles */
+      .members-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .member-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .member-item:hover {
+        background-color: #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .member-item.is-leader {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+      }
+
+      .member-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex: 1;
+      }
+
+      .member-info i {
+        font-size: 24px;
+        color: #6c757d;
+      }
+
+      .member-item.is-leader .member-info i {
+        color: #ffc107;
+      }
+
+      .member-details {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .member-details strong {
+        font-size: 16px;
+        color: #212529;
+      }
+
+      .member-details small {
+        font-size: 14px;
+      }
+
+      .member-actions button {
+        min-width: 100px;
+      }
+
+      .add-member-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .badge-warning {
+        background-color: #ffc107;
+        color: #212529;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 15px;
+      }
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+      }
+
+      .stat-item i {
+        font-size: 32px;
+        color: #0d6efd;
+      }
+
+      .stat-content {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #212529;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #6c757d;
+      }
+
+      .current-leader-info {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+      }
+
+      .current-leader-info i {
+        margin-right: 10px;
+        color: #ffc107;
+      }
+    </style>
+  </head>
+  <body>
+    <section layout:fragment="content">
+      <div class="content-header">
+        <h1>Edit Team: <span th:text="${team.name}">Team Name</span></h1>
+        <div class="header-actions">
+          <a
+            th:href="@{/admin/teams/{id}(id=${team.id})}"
+            class="btn btn-secondary"
+          >
+            <i class="fas fa-arrow-left"></i> Back to Detail
+          </a>
+        </div>
+      </div>
+
+      <!-- Error Messages -->
+      <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle"></i>
+        <span th:text="${errorMessage}"></span>
+      </div>
+
+      <div class="form-container">
+        <form
+          id="teamForm"
+          class="form-horizontal"
+          th:action="@{/admin/teams/{id}(id=${team.id})}"
+          method="post"
+        >
+          <!-- Basic Information -->
+          <fieldset>
+            <legend>Basic Information</legend>
+
+            <div class="form-group">
+              <label for="name" class="form-label"
+                >Team Name <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                name="name"
+                th:value="${team.name}"
+                placeholder="Enter team name"
+                required
+              />
+              <div
+                class="error-message"
+                th:if="${errors != null && errors.hasFieldErrors('name')}"
+                th:text="${errors.getFieldError('name').defaultMessage}"
+              ></div>
+            </div>
+
+            <div class="form-group">
+              <label for="description" class="form-label">Description</label>
+              <textarea
+                class="form-control"
+                id="description"
+                name="description"
+                rows="4"
+                th:text="${team.description}"
+                placeholder="Enter team description..."
+              ></textarea>
+              <div
+                class="error-message"
+                th:if="${errors != null && errors.hasFieldErrors('description')}"
+                th:text="${errors.getFieldError('description').defaultMessage}"
+              ></div>
+            </div>
+          </fieldset>
+
+          <!-- Leadership -->
+          <fieldset>
+            <legend>Leadership</legend>
+
+            <div class="form-group">
+              <label class="form-label">Current Leader</label>
+              <div
+                class="current-leader-info"
+                th:if="${team.currentLeader != null}"
+              >
+                <i class="fas fa-user-tie"></i>
+                <strong th:text="${team.currentLeader.name}"
+                  >Current Leader Name</strong
+                >
+                <span class="text-muted">
+                  (Since
+                  <span
+                    th:text="${#temporals.format(team.currentLeader.startedAt, 'dd/MM/yyyy')}"
+                    >01/01/2025</span
+                  >)
+                </span>
+              </div>
+              <div
+                class="current-leader-info text-muted"
+                th:if="${team.currentLeader == null}"
+              >
+                <i class="fas fa-user-slash"></i>
+                No leader assigned
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="leaderId" class="form-label">Team Leader</label>
+              <select
+                class="form-control"
+                id="leaderId"
+                name="leaderId"
+                required
+              >
+                <option value="">-- Select a leader --</option>
+                <option
+                  th:each="user : ${users}"
+                  th:value="${user.id}"
+                  th:text="${user.name + ' (' + user.email + ')'}"
+                  th:selected="${team.currentLeader != null && team.currentLeader.userId == user.id}"
+                ></option>
+              </select>
+              <small class="form-text"
+                >Select a team leader. Current leader will be changed if you
+                select a different user.</small
+              >
+            </div>
+          </fieldset>
+
+          <!-- Team Statistics (Read-only) -->
+          <fieldset>
+            <legend>Team Statistics</legend>
+
+            <div class="stats-grid">
+              <div class="stat-item">
+                <i class="fas fa-users"></i>
+                <div class="stat-content">
+                  <span
+                    class="stat-value"
+                    th:text="${team.memberCount != null ? team.memberCount : 0}"
+                    >0</span
+                  >
+                  <span class="stat-label">Members</span>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <i class="fas fa-project-diagram"></i>
+                <div class="stat-content">
+                  <span
+                    class="stat-value"
+                    th:text="${team.projects != null ? team.projects.size() : 0}"
+                    >0</span
+                  >
+                  <span class="stat-label">Projects</span>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <i class="fas fa-history"></i>
+                <div class="stat-content">
+                  <span
+                    class="stat-value"
+                    th:text="${team.leadershipHistory != null ? team.leadershipHistory.size() : 0}"
+                    >0</span
+                  >
+                  <span class="stat-label">Leadership Changes</span>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Team Members Management -->
+          <fieldset>
+            <legend>Team Members Management</legend>
+
+            <!-- Current Members List -->
+            <div class="form-group">
+              <label class="form-label">Current Members</label>
+              <div
+                th:if="${team.members != null && !team.members.isEmpty()}"
+                class="members-list"
+              >
+                <div
+                  th:each="member : ${team.members}"
+                  class="member-item"
+                  th:classappend="${team.currentLeader != null && member.userId == team.currentLeader.userId} ? 'is-leader' : ''"
+                >
+                  <div class="member-info">
+                    <i
+                      class="fas"
+                      th:classappend="${team.currentLeader != null && member.userId == team.currentLeader.userId} ? 'fa-user-tie' : 'fa-user'"
+                    ></i>
+                    <div class="member-details">
+                      <strong th:text="${member.name}">Member Name</strong>
+                      <small class="text-muted" th:text="${member.email}"
+                        >email@example.com</small
+                      >
+                    </div>
+                    <span
+                      th:if="${team.currentLeader != null && member.userId == team.currentLeader.userId}"
+                      class="badge badge-warning"
+                    >
+                      <i class="fas fa-crown"></i> Leader
+                    </span>
+                  </div>
+                  <div class="member-actions">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-danger"
+                      th:onclick="'removeMember(' + ${team.id} + ', ' + ${member.userId} + ')'"
+                      th:disabled="${team.currentLeader != null && member.userId == team.currentLeader.userId}"
+                      th:title="${team.currentLeader != null && member.userId == team.currentLeader.userId} ? 'Cannot remove current leader' : 'Remove member'"
+                    >
+                      <i class="fas fa-user-minus"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                th:if="${team.members == null || team.members.isEmpty()}"
+                class="alert alert-info"
+              >
+                <i class="fas fa-info-circle"></i> No members in this team yet
+              </div>
+            </div>
+
+            <!-- Add Member Form -->
+            <div class="form-group">
+              <label class="form-label">Add New Members</label>
+              <div class="add-member-form">
+                <select
+                  class="form-control"
+                  id="newMemberIds"
+                  multiple
+                  size="8"
+                  style="flex: 1; margin-right: 10px; height: auto"
+                >
+                  <option
+                    th:each="user : ${availableUsers}"
+                    th:value="${user.id}"
+                    th:text="|${user.name} (${user.email})|"
+                  ></option>
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  onclick="addMembers()"
+                >
+                  <i class="fas fa-user-plus"></i> Add Selected
+                </button>
+              </div>
+              <small class="form-text">
+                <i class="fas fa-info-circle"></i> Hold Ctrl (Cmd on Mac) to
+                select multiple users. Only users who are not currently members
+                of any team can be added.
+              </small>
+            </div>
+          </fieldset>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Update Team
+            </button>
+            <a
+              th:href="@{/admin/teams/{id}(id=${team.id})}"
+              class="btn btn-secondary"
+            >
+              <i class="fas fa-times"></i> Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <th:block layout:fragment="scripts">
+      <script th:inline="javascript">
+        /*<![CDATA[*/
+        const teamId = /*[[${team.id}]]*/ 0;
+        const csrfToken = /*[[${_csrf.token}]]*/ "";
+        const csrfHeader = /*[[${_csrf.headerName}]]*/ "";
+
+        // Form validation
+        document
+          .getElementById("teamForm")
+          .addEventListener("submit", function (e) {
+            const teamName = document.getElementById("name").value.trim();
+            if (!teamName) {
+              e.preventDefault();
+              alert("Team name is required!");
+              return false;
+            }
+
+            // Clear saved leader selection after successful submit
+            sessionStorage.removeItem("selectedLeaderId_" + teamId);
+          });
+
+        // Save selected leader to sessionStorage when changed
+        document
+          .getElementById("leaderId")
+          .addEventListener("change", function () {
+            if (this.value) {
+              sessionStorage.setItem("selectedLeaderId_" + teamId, this.value);
+            }
+          });
+
+        // Restore selected leader from sessionStorage on page load
+        window.addEventListener("DOMContentLoaded", function () {
+          const savedLeaderId = sessionStorage.getItem(
+            "selectedLeaderId_" + teamId
+          );
+          const leaderSelect = document.getElementById("leaderId");
+
+          if (savedLeaderId && leaderSelect) {
+            leaderSelect.value = savedLeaderId;
+          }
+        });
+
+        // Add members function (bulk)
+        function addMembers() {
+          const select = document.getElementById("newMemberIds");
+          const selectedOptions = Array.from(select.selectedOptions);
+          const userIds = selectedOptions.map((option) => option.value);
+
+          if (userIds.length === 0) {
+            alert("Please select at least one user to add");
+            return;
+          }
+
+          // Save current leader selection before reload
+          const leaderSelect = document.getElementById("leaderId");
+          if (leaderSelect.value) {
+            sessionStorage.setItem(
+              "selectedLeaderId_" + teamId,
+              leaderSelect.value
+            );
+          }
+
+          fetch(`/admin/teams/${teamId}/members/add-bulk`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              [csrfHeader]: csrfToken,
+            },
+            body: JSON.stringify({ userIds: userIds }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                alert(`Successfully added ${data.addedCount} member(s)!`);
+                location.reload();
+              } else {
+                alert("Failed to add members: " + data.message);
+              }
+            })
+            .catch((error) => {
+              alert("An error occurred: " + error);
+            });
+        }
+
+        // Remove member function
+        function removeMember(teamId, userId) {
+          if (
+            !confirm(
+              "Are you sure you want to remove this member from the team?"
+            )
+          ) {
+            return;
+          }
+
+          fetch(`/admin/teams/${teamId}/members/${userId}/remove`, {
+            method: "POST",
+            headers: {
+              [csrfHeader]: csrfToken,
+            },
+          })
+            .then((response) => response.text())
+            .then((data) => {
+              if (data === "success" || !data.startsWith("error")) {
+                alert("Member removed successfully!");
+                location.reload();
+              } else {
+                alert(data.replace("error: ", ""));
+              }
+            })
+            .catch((error) => {
+              alert("An error occurred: " + error);
+            });
+        }
+        /*]]>*/
+      </script>
+    </th:block>
+  </body>
+</html>

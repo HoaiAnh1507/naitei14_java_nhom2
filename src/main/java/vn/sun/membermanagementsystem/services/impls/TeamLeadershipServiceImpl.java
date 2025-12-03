@@ -33,6 +33,7 @@ public class TeamLeadershipServiceImpl implements TeamLeadershipService {
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final jakarta.persistence.EntityManager entityManager;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -96,13 +97,14 @@ public class TeamLeadershipServiceImpl implements TeamLeadershipService {
                 log.warn("User {} is already the current leader of team {}", newLeaderId, teamId);
                 throw new BadRequestException("User is already the current leader of this team");
             }
-
             currentLeadership.setEndedAt(LocalDateTime.now());
             leadershipRepository.save(currentLeadership);
+            entityManager.flush();
+
             log.info("Closed previous leadership for team {}", teamId);
         }
 
-        ensureUserIsActiveMember(team, newLeader);
+        ensureUserIsTeamMember(team, newLeader);
 
         TeamLeadershipHistory newLeadership = new TeamLeadershipHistory();
         newLeadership.setTeam(team);

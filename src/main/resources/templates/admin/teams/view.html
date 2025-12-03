@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layouts/admin-layout}"
+>
+  <head>
+    <title layout:title-pattern="Team Detail - %s">Team Detail</title>
+    <link rel="stylesheet" th:href="@{/css/user-form.css?v=1.3}" />
+    <style>
+      .team-detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e0e0e0;
+      }
+
+      .team-info-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .info-row {
+        display: flex;
+        padding: 10px 0;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .info-row:last-child {
+        border-bottom: none;
+      }
+
+      .info-label {
+        font-weight: 600;
+        width: 200px;
+        color: #495057;
+      }
+
+      .info-value {
+        flex: 1;
+        color: #212529;
+      }
+
+      .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-card.members {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
+
+      .stat-card.projects {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
+
+      .stat-card.active {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      }
+
+      .stat-card.completed {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+      }
+
+      .stat-card h3 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .stat-card .stat-number {
+        font-size: 36px;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+
+      .stat-card .stat-icon {
+        font-size: 24px;
+        opacity: 0.8;
+      }
+
+      .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 30px 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #007bff;
+        color: #212529;
+      }
+
+      .member-list,
+      .project-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .member-item,
+      .project-item {
+        background: #fff;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .member-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .member-actions .btn {
+        white-space: nowrap;
+      }
+
+      .member-info,
+      .project-info {
+        flex: 1;
+      }
+
+      .member-name,
+      .project-name {
+        font-weight: 600;
+        color: #007bff;
+        margin-bottom: 5px;
+      }
+
+      .member-details,
+      .project-details {
+        color: #6c757d;
+        font-size: 14px;
+      }
+
+      .timeline {
+        position: relative;
+        padding-left: 30px;
+      }
+
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+      }
+
+      .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+      }
+
+      .timeline-item::before {
+        content: "";
+        position: absolute;
+        left: -26px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 2px #007bff;
+      }
+
+      .timeline-item.current::before {
+        background: #28a745;
+        box-shadow: 0 0 0 2px #28a745;
+      }
+
+      .timeline-content {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 3px solid #007bff;
+      }
+
+      .timeline-item.current .timeline-content {
+        border-left-color: #28a745;
+        background: #d4edda;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+      }
+
+      .empty-state i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <section layout:fragment="content">
+      <!-- Success/Error Messages -->
+      <div th:if="${successMessage}" class="alert alert-success" role="alert">
+        <i class="fas fa-check-circle"></i>
+        <span th:text="${successMessage}"></span>
+      </div>
+
+      <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle"></i>
+        <span th:text="${errorMessage}"></span>
+      </div>
+
+      <div class="team-detail-header">
+        <div>
+          <h1 th:text="${team.name}">Team Name</h1>
+          <p
+            class="text-muted"
+            th:if="${team.description != null && !team.description.isEmpty()}"
+            th:text="${team.description}"
+          >
+            Team Description
+          </p>
+        </div>
+        <div class="header-actions">
+          <a
+            th:href="@{/admin/teams/{id}/edit(id=${team.id})}"
+            class="btn btn-primary"
+          >
+            <i class="fas fa-edit"></i> Edit Team
+          </a>
+          <a th:href="@{/admin/teams}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+          </a>
+        </div>
+      </div>
+
+      <!-- Team Statistics -->
+      <div class="stats-container">
+        <div class="stat-card members">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <h3>Total Members</h3>
+          <div class="stat-number" th:text="${statistics.totalMembers}">0</div>
+          <small>
+            <span th:text="${statistics.activeMembers}">0</span> active,
+            <span th:text="${statistics.inactiveMembers}">0</span> inactive
+          </small>
+        </div>
+
+        <div class="stat-card projects">
+          <div class="stat-icon"><i class="fas fa-project-diagram"></i></div>
+          <h3>Total Projects</h3>
+          <div class="stat-number" th:text="${statistics.totalProjects}">0</div>
+        </div>
+
+        <div class="stat-card active">
+          <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+          <h3>Active Projects</h3>
+          <div class="stat-number" th:text="${statistics.activeProjects}">
+            0
+          </div>
+        </div>
+
+        <div class="stat-card completed">
+          <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+          <h3>Completed Projects</h3>
+          <div class="stat-number" th:text="${statistics.completedProjects}">
+            0
+          </div>
+        </div>
+      </div>
+
+      <!-- Basic Information -->
+      <div class="team-info-section">
+        <h2 class="section-title">
+          <i class="fas fa-info-circle"></i> Basic Information
+        </h2>
+
+        <div class="info-row">
+          <div class="info-label">Team ID:</div>
+          <div class="info-value" th:text="${team.id}">1</div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">Team Name:</div>
+          <div class="info-value" th:text="${team.name}">Team Name</div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">Description:</div>
+          <div class="info-value">
+            <span
+              th:if="${team.description != null && !team.description.isEmpty()}"
+              th:text="${team.description}"
+              >Description</span
+            >
+            <span
+              th:if="${team.description == null || team.description.isEmpty()}"
+              class="text-muted"
+              >No description provided</span
+            >
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">Current Leader:</div>
+          <div class="info-value">
+            <span th:if="${team.currentLeader != null}">
+              <i class="fas fa-user-tie text-primary"></i>
+              <strong th:text="${team.currentLeader.name}">Leader Name</strong>
+              <span class="text-muted">
+                (Since
+                <span
+                  th:text="${#temporals.format(team.currentLeader.startedAt, 'dd/MM/yyyy')}"
+                  >01/01/2025</span
+                >)
+              </span>
+            </span>
+            <span th:if="${team.currentLeader == null}" class="text-muted">
+              <i class="fas fa-user-slash"></i> No leader assigned
+            </span>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">Created At:</div>
+          <div
+            class="info-value"
+            th:text="${team.createdAt != null ? #temporals.format(team.createdAt, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}"
+          >
+            01/01/2025 00:00:00
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-label">Last Updated:</div>
+          <div
+            class="info-value"
+            th:text="${team.updatedAt != null ? #temporals.format(team.updatedAt, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}"
+          >
+            01/01/2025 00:00:00
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Members -->
+      <h2 class="section-title"><i class="fas fa-users"></i> Team Members</h2>
+      <div th:if="${team.members != null && !team.members.isEmpty()}">
+        <ul class="member-list">
+          <li class="member-item" th:each="member : ${team.members}">
+            <div class="member-info">
+              <div class="member-name" th:text="${member.name}">
+                Member Name
+              </div>
+              <div class="member-details">
+                <i class="fas fa-envelope"></i>
+                <span th:text="${member.email}">email@example.com</span>
+                <span
+                  th:if="${member.position != null}"
+                  style="margin-left: 15px"
+                >
+                  <i class="fas fa-briefcase"></i>
+                  <span th:text="${member.position}">Position</span>
+                </span>
+              </div>
+              <div class="member-details" style="margin-top: 5px">
+                <i class="fas fa-calendar-alt"></i>
+                Joined:
+                <span
+                  th:text="${#temporals.format(member.joinedAt, 'dd/MM/yyyy')}"
+                  >01/01/2025</span
+                >
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div
+        th:if="${team.members == null || team.members.isEmpty()}"
+        class="empty-state"
+      >
+        <i class="fas fa-users"></i>
+        <p>No members in this team yet</p>
+      </div>
+
+      <!-- Team Projects -->
+      <h2 class="section-title">
+        <i class="fas fa-project-diagram"></i> Team Projects
+      </h2>
+      <div th:if="${team.projects != null && !team.projects.isEmpty()}">
+        <ul class="project-list">
+          <li class="project-item" th:each="project : ${team.projects}">
+            <div class="project-info">
+              <div class="project-name">
+                <span th:text="${project.name}">Project Name</span>
+                <span
+                  class="badge badge-secondary"
+                  th:text="${project.abbreviation}"
+                  >ABB</span
+                >
+              </div>
+              <div class="project-details">
+                Status:
+                <span
+                  class="badge"
+                  th:classappend="${project.status == 'COMPLETED' ? 'badge-success' : 
+                                             project.status == 'ACTIVE' ? 'badge-primary' : 
+                                             project.status == 'CANCELLED' ? 'badge-danger' : 'badge-warning'}"
+                  th:text="${project.status}"
+                  >ACTIVE</span
+                >
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div
+        th:if="${team.projects == null || team.projects.isEmpty()}"
+        class="empty-state"
+      >
+        <i class="fas fa-project-diagram"></i>
+        <p>No projects assigned to this team yet</p>
+      </div>
+
+      <!-- Leadership History -->
+      <h2 class="section-title">
+        <i class="fas fa-history"></i> Leadership History
+      </h2>
+      <div
+        th:if="${team.leadershipHistory != null && !team.leadershipHistory.isEmpty()}"
+      >
+        <div class="timeline">
+          <div
+            class="timeline-item"
+            th:each="history : ${team.leadershipHistory}"
+            th:classappend="${history.isCurrent != null && history.isCurrent ? 'current' : ''}"
+          >
+            <div class="timeline-content">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: start;
+                "
+              >
+                <div>
+                  <strong th:text="${history.leaderName}">Leader Name</strong>
+                  <div class="text-muted" style="font-size: 14px">
+                    <i class="fas fa-envelope"></i>
+                    <span th:text="${history.leaderEmail}"
+                      >email@example.com</span
+                    >
+                  </div>
+                </div>
+                <span th:if="${history.isCurrent}" class="badge badge-success">
+                  <i class="fas fa-crown"></i> Current Leader
+                </span>
+              </div>
+              <div style="margin-top: 10px; font-size: 14px; color: #6c757d">
+                <i class="fas fa-calendar-check"></i>
+                Started:
+                <span
+                  th:text="${#temporals.format(history.startedAt, 'dd/MM/yyyy HH:mm')}"
+                  >01/01/2025 00:00</span
+                >
+                <span
+                  th:if="${history.endedAt != null}"
+                  style="margin-left: 15px"
+                >
+                  <i class="fas fa-calendar-times"></i>
+                  Ended:
+                  <span
+                    th:text="${#temporals.format(history.endedAt, 'dd/MM/yyyy HH:mm')}"
+                    >01/01/2025 00:00</span
+                  >
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        th:if="${team.leadershipHistory == null || team.leadershipHistory.isEmpty()}"
+        class="empty-state"
+      >
+        <i class="fas fa-history"></i>
+        <p>No leadership history for this team</p>
+      </div>
+    </section>
+  </body>
+</html>
