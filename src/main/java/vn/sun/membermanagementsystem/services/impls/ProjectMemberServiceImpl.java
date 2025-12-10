@@ -2,8 +2,11 @@ package vn.sun.membermanagementsystem.services.impls;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.sun.membermanagementsystem.dto.response.ProjectMemberDTO;
 import vn.sun.membermanagementsystem.entities.*;
 import vn.sun.membermanagementsystem.enums.MembershipStatus;
 import vn.sun.membermanagementsystem.repositories.ProjectMemberRepository;
@@ -99,5 +102,22 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             pm.setLeftAt(null);
             projectMemberRepo.save(pm);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProjectMemberDTO> getProjectMembers(Long projectId, Pageable pageable) {
+        return projectMemberRepo.findByProjectId(projectId, pageable)
+                .map(pm -> {
+                    ProjectMemberDTO dto = new ProjectMemberDTO();
+                    dto.setId(pm.getId());
+                    dto.setUserId(pm.getUser().getId());
+                    dto.setUserName(pm.getUser().getName());
+                    dto.setUserEmail(pm.getUser().getEmail());
+                    dto.setJoinedAt(pm.getJoinedAt());
+                    dto.setLeftAt(pm.getLeftAt());
+                    dto.setStatus(pm.getStatus().name());
+                    return dto;
+                });
     }
 }

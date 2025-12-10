@@ -67,7 +67,6 @@
             <option value="">-- No Specific Team --</option>
             <option th:each="team : ${teams}" th:value="${team.id}" th:text="${team.name}"></option>
           </select>
-          <small class="text-muted">Changing team does not automatically remove existing members.</small>
         </div>
 
         <div class="form-group">

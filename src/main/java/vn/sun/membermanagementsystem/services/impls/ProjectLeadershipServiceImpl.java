@@ -52,10 +52,6 @@ public class ProjectLeadershipServiceImpl implements ProjectLeadershipService {
         User newLeader = userRepo.findById(requestedLeaderId)
                 .orElseThrow(() -> new EntityNotFoundException("Leader not found"));
 
-        if (team != null && !teamMemberRepo.existsByUserAndTeamAndStatus(newLeader, team, MembershipStatus.ACTIVE)) {
-            throw new IllegalArgumentException("Selected leader is not an active member of the chosen team");
-        }
-
         currentOpt.ifPresent(curr -> {
             curr.setEndedAt(LocalDateTime.now());
             leadershipRepo.save(curr);

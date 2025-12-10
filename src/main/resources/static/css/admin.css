@@ -892,3 +892,14 @@ input:focus, select:focus {
     justify-content: flex-end;
     gap: 15px;
 }
+.sort-link {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.sort-link:hover {
+    color: #e2e6ea;
+    text-decoration: none;
+}

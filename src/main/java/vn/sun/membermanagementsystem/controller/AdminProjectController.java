@@ -16,6 +16,7 @@ import vn.sun.membermanagementsystem.dto.request.CreateProjectRequest;
 import vn.sun.membermanagementsystem.dto.request.UpdateProjectRequest;
 import vn.sun.membermanagementsystem.dto.response.*;
 import vn.sun.membermanagementsystem.enums.UserStatus;
+import vn.sun.membermanagementsystem.services.ProjectMemberService;
 import vn.sun.membermanagementsystem.services.ProjectService;
 import vn.sun.membermanagementsystem.services.TeamService;
 import vn.sun.membermanagementsystem.services.UserService;
@@ -30,6 +31,7 @@ public class AdminProjectController {
     private final ProjectService projectService;
     private final TeamService teamService;
     private final UserService userService;
+    private final ProjectMemberService projectMemberService;
 
     private static final List<Integer> PAGE_SIZES = List.of(10, 25, 50, 100);
 
@@ -68,9 +70,31 @@ public class AdminProjectController {
     }
 
     @GetMapping("/{id}")
-    public String viewProjectDetail(@PathVariable Long id, Model model) {
+    public String viewProjectDetail(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "joinedAt") String sortField,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            Model model
+    ) {
+        if (!PAGE_SIZES.contains(size)) size = 10;
+
         ProjectDetailDTO project = projectService.getProjectDetail(id);
         model.addAttribute("project", project);
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+
+        Page<ProjectMemberDTO> memberPage = projectMemberService.getProjectMembers(id, pageable);
+
+        model.addAttribute("memberPage", memberPage);
+        model.addAttribute("currentPageSize", size);
+
+        model.addAttribute("sortField", sortField);
+        model.addAttribute("sortDir", sortDir);
+        model.addAttribute("reverseSortDir", sortDir.equals("asc") ? "desc" : "asc"); // Để đảo chiều khi click
+
         return "admin/projects/detail";
     }
 

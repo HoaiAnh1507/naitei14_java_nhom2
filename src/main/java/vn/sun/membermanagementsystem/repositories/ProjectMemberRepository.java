@@ -1,5 +1,7 @@
 package vn.sun.membermanagementsystem.repositories;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import vn.sun.membermanagementsystem.entities.Project;
@@ -19,5 +21,6 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
     List<ProjectMember> findByProjectAndStatus(Project project, ProjectMember.MemberStatus status);
 
     Optional<ProjectMember> findByProjectAndUser(Project project, User user);
+    Page<ProjectMember> findByProjectId(Long projectId, Pageable pageable);
 
 }
