@@ -35,6 +35,8 @@ public interface TeamService {
 
     List<UserSelectionDTO> getActiveUsersByTeam(Long teamId);
 
+    Page<TeamDetailDTO.TeamMemberDTO> getTeamMembersWithPagination(Long teamId, Pageable pageable);
+
     void addMemberToTeam(Long teamId, Long userId);
 
     int addMembersToTeam(Long teamId, List<Long> userIds);

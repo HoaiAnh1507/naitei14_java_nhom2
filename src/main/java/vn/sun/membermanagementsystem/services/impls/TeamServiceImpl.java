@@ -453,4 +453,39 @@ public class TeamServiceImpl implements TeamService {
         teamMemberRepository.save(membership);
         log.info("User {} successfully removed from team {}", userId, teamId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TeamDetailDTO.TeamMemberDTO> getTeamMembersWithPagination(Long teamId, Pageable pageable) {
+        log.info("Getting team members with pagination for team ID: {}", teamId);
+
+        Team team = teamRepository.findByIdAndNotDeleted(teamId)
+                .orElseThrow(() -> {
+                    log.error("Team not found with ID: {}", teamId);
+                    return new ResourceNotFoundException("Team not found with ID: " + teamId);
+                });
+
+        Page<TeamMember> memberPage = teamMemberRepository.findActiveTeamMembersByTeamId(teamId, pageable);
+
+        return memberPage.map(tm -> {
+            User user = tm.getUser();
+            String positionName = null;
+
+            if (user.getPositionHistories() != null && !user.getPositionHistories().isEmpty()) {
+                positionName = user.getPositionHistories().stream()
+                        .filter(ph -> ph.getEndedAt() == null && ph.getPosition() != null)
+                        .findFirst()
+                        .map(ph -> ph.getPosition().getName())
+                        .orElse(null);
+            }
+
+            return TeamDetailDTO.TeamMemberDTO.builder()
+                    .userId(user.getId())
+                    .name(user.getName())
+                    .email(user.getEmail())
+                    .position(positionName)
+                    .joinedAt(tm.getJoinedAt())
+                    .build();
+        });
+    }
 }

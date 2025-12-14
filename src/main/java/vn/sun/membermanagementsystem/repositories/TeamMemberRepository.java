@@ -1,5 +1,7 @@
 package vn.sun.membermanagementsystem.repositories;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -45,4 +47,11 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
                         "WHERE tm.team.id = :teamId " +
                         "AND tm.leftAt IS NULL")
         List<TeamMember> findByTeamIdAndLeftAtIsNull(@Param("teamId") Long teamId);
+
+        @Query("SELECT tm FROM TeamMember tm " +
+                        "JOIN FETCH tm.user u " +
+                        "WHERE tm.team.id = :teamId " +
+                        "AND tm.status = vn.sun.membermanagementsystem.enums.MembershipStatus.ACTIVE " +
+                        "AND tm.leftAt IS NULL")
+        Page<TeamMember> findActiveTeamMembersByTeamId(@Param("teamId") Long teamId, Pageable pageable);
 }
