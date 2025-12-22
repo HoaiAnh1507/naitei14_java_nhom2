@@ -1,8 +1,6 @@
 <header th:fragment="header" class="header">
     <h1>Member Management System</h1>
     <nav>
-        <a th:href="@{/}">Home</a>
-        <a th:href="@{/profile}">My Profile</a>
         <form th:action="@{/admin/logout}" method="post">            
            <button type="submit">Logout</button>                    
         </form>   

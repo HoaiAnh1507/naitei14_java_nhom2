@@ -34,7 +34,7 @@ public class AuthenticationLoggingHandler implements AuthenticationSuccessHandle
         String email = authentication.getName();
         logAuthEvent("LOGIN", email, "Admin login successful", request);
         
-        response.sendRedirect(request.getContextPath() + "/admin/dashboard");
+        response.sendRedirect(request.getContextPath() + "/admin/users");
     }
 
     @Override

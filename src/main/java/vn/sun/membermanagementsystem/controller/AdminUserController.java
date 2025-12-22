@@ -29,11 +29,6 @@ public class AdminUserController {
     private final TeamService teamService;
     private final PositionService positionService;
     private final SkillService skillService;
-
-    @GetMapping("/admin")
-    public String dashboard() {
-        return "admin/dashboard";
-    }
     
     @GetMapping("/admin/users")
     public String userList(

@@ -28,7 +28,7 @@ public class AuthAdminController {
      * - Xử lý POST /admin/login khi submit form
      * - Validate username/password
      * - Tạo session nếu thành công
-     * - Redirect đến /admin/dashboard
+     * - Redirect đến /admin/users
      */
     @GetMapping("/login")
     public String loginPage(
@@ -47,17 +47,5 @@ public class AuthAdminController {
         }
         
         return "auth/login";
-    }
-    
-    /**
-     * Dashboard trang chủ sau khi login thành công
-     * GET /admin/dashboard
-     * Yêu cầu: User phải có role ADMIN và đã authenticated
-     */
-    @GetMapping("/dashboard")
-    public String dashboard(Model model) {
-        // Spring Security đã check authentication và role ADMIN
-        // Nếu đến được đây nghĩa là user đã login và có quyền
-        return "admin/dashboard";
     }
 }
