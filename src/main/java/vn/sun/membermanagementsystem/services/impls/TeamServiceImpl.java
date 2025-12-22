@@ -224,11 +224,11 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TeamDTO> getAllTeamsWithPagination(Pageable pageable) {
-        log.info("Getting all teams with pagination: page {}, size {}",
-                pageable.getPageNumber(), pageable.getPageSize());
+    public Page<TeamDTO> getAllTeamsWithPagination(Pageable pageable, String keyword) {
+        log.info("Getting all teams with pagination: page {}, size {}, keyword: {}",
+                pageable.getPageNumber(), pageable.getPageSize(), keyword);
 
-        Page<Team> teamPage = teamRepository.findAllNotDeleted(pageable);
+        Page<Team> teamPage = teamRepository.findAllByKeyword(keyword, pageable);
 
         return teamPage.map(team -> {
             TeamDTO dto = teamMapper.toDTO(team);

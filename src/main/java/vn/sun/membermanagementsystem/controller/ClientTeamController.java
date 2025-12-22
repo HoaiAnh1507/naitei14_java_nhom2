@@ -50,7 +50,7 @@ public class ClientTeamController {
                 : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<TeamDTO> teamPage = teamService.getAllTeamsWithPagination(pageable);
+        Page<TeamDTO> teamPage = teamService.getAllTeamsWithPagination(pageable, keyword);
 
         Map<String, Object> response = new HashMap<>();
         response.put("teams", teamPage.getContent());
