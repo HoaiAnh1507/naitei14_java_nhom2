@@ -27,4 +27,15 @@ public class UserListItemDTO {
     private UserStatus status;
     private LocalDateTime createdAt;
     private String activeTeam;
+    private PositionInfo currentPosition;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PositionInfo {
+        private Long id;
+        private String name;
+        private String abbreviation;
+    }
 }

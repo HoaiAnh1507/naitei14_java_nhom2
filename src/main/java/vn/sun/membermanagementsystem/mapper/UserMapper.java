@@ -13,6 +13,7 @@ public interface UserMapper {
 
     // ===== UserListItemDTO mappings =====
     @Mapping(target = "activeTeam", expression = "java(getActiveTeamName(user))")
+    @Mapping(target = "currentPosition", expression = "java(mapCurrentPositionForList(user))")
     UserListItemDTO toListItemDTO(User user);
 
     List<UserListItemDTO> toListItemDTOList(List<User> users);
@@ -43,6 +44,22 @@ public interface UserMapper {
                         && tm.getTeam().getDeletedAt() == null)
                 .map(tm -> tm.getTeam().getName())
                 .findFirst()
+                .orElse(null);
+    }
+
+    // For UserListItemDTO
+    default UserListItemDTO.PositionInfo mapCurrentPositionForList(User user) {
+        if (user.getPositionHistories() == null || user.getPositionHistories().isEmpty()) {
+            return null;
+        }
+        return user.getPositionHistories().stream()
+                .filter(ph -> ph.getEndedAt() == null && ph.getPosition() != null)
+                .findFirst()
+                .map(ph -> UserListItemDTO.PositionInfo.builder()
+                        .id(ph.getPosition().getId())
+                        .name(ph.getPosition().getName())
+                        .abbreviation(ph.getPosition().getAbbreviation())
+                        .build())
                 .orElse(null);
     }
 

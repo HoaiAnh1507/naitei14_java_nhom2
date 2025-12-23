@@ -18,22 +18,12 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/teams")
+@RequestMapping("/api/v1/teams")
 @RequiredArgsConstructor
 public class ClientTeamController {
 
     private final TeamService teamService;
 
-    /**
-     * GET /api/teams - List all teams with pagination
-     *
-     * @param page    Page number (default: 0)
-     * @param size    Page size (default: 10)
-     * @param sortBy  Sort field (default: "name")
-     * @param sortDir Sort direction (default: "asc")
-     * @param keyword Search keyword for team name (optional)
-     * @return Page of teams with pagination metadata
-     */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllTeams(
             @RequestParam(defaultValue = "0") int page,
@@ -62,12 +52,6 @@ public class ClientTeamController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * GET /api/teams/{id} - Get team detail
-     *
-     * @param id Team ID
-     * @return Team detail information
-     */
     @GetMapping("/{id}")
     public ResponseEntity<TeamDetailDTO> getTeamDetail(@PathVariable Long id) {
         log.info("Client API: Getting team detail for ID: {}", id);
@@ -81,14 +65,6 @@ public class ClientTeamController {
         }
     }
 
-    /**
-     * GET /api/teams/{id}/members - List members in a team with pagination
-     *
-     * @param id   Team ID
-     * @param page Page number (default: 0)
-     * @param size Page size (default: 10)
-     * @return Page of team members with pagination metadata
-     */
     @GetMapping("/{id}/members")
     public ResponseEntity<Map<String, Object>> getTeamMembers(
             @PathVariable Long id,
