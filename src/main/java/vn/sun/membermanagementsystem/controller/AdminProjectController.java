@@ -129,13 +129,18 @@ public class AdminProjectController {
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        if (!model.containsAttribute("projectRequest")) {
-            UpdateProjectRequest req = projectService.getUpdateProjectRequest(id);
-            model.addAttribute("projectRequest", req);
+    public String showEditForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            if (!model.containsAttribute("projectRequest")) {
+                UpdateProjectRequest req = projectService.getUpdateProjectRequest(id);
+                model.addAttribute("projectRequest", req);
+            }
+            model.addAttribute("projectId", id);
+            return "admin/projects/edit";
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/projects/" + id;
         }
-        model.addAttribute("projectId", id);
-        return "admin/projects/edit";
     }
 
     @PostMapping("/edit/{id}")
@@ -156,10 +161,9 @@ public class AdminProjectController {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Project '" + updated.getName() + "' updated successfully!");
             return "redirect:/admin/projects/" + updated.getId();
-        } catch (IllegalArgumentException e) {
-            result.reject("error.business", e.getMessage());
-            model.addAttribute("projectId", id);
-            return "admin/projects/edit";
+        } catch (IllegalArgumentException | IllegalStateException e) { // Bắt thêm IllegalStateException
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/projects/" + id;
         }
     }
 

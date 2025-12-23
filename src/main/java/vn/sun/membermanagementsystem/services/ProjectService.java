@@ -17,4 +17,5 @@ public interface ProjectService {
     ProjectDTO updateProject(Long id, UpdateProjectRequest request);
     UpdateProjectRequest getUpdateProjectRequest(Long id);
     void cancelProject(Long id);
+    void updateAllProjectStatuses();
 }

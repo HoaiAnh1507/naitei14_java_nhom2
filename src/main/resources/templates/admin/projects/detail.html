@@ -23,7 +23,10 @@
         <i class="fas fa-arrow-left"></i> Back
       </a>
 
-      <a th:href="@{/admin/projects/edit/{id}(id=${project.id})}" class="btn btn-primary">
+      <a th:href="@{/admin/projects/edit/{id}(id=${project.id})}"
+         class="btn btn-primary"
+         th:classappend="${(project.status.toString() == 'COMPLETED' or project.status.toString() == 'CANCELLED') ? 'disabled' : ''}"
+         th:attr="aria-disabled=${(project.status.toString() == 'COMPLETED' or project.status.toString() == 'CANCELLED') ? 'true' : 'false'}">
         <i class="fas fa-edit"></i> Edit
       </a>
 
@@ -119,13 +122,21 @@
                    style="margin-left: 5px; opacity: 0.7;"></i>
               </a>
             </th>
-
+            <th>
+              <a th:href="@{/admin/projects/{id}(id=${project.id}, page=${memberPage.number}, size=${currentPageSize}, sortField='leftAt', sortDir=${sortField == 'leftAt' ? reverseSortDir : 'asc'})}"
+                 class="sort-link">
+                Left Date
+                <i class="fas"
+                   th:classappend="${sortField == 'leftAt' ? (sortDir == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"
+                   style="margin-left: 5px; opacity: 0.7;"></i>
+              </a>
+            </th>
             <th>
               <a th:href="@{/admin/projects/{id}(id=${project.id}, page=${memberPage.number}, size=${currentPageSize}, sortField='status', sortDir=${sortField == 'status' ? reverseSortDir : 'asc'})}"
                  class="sort-link" style="color: white;">
                 Status
                 <i class="fas"
-                   th:classappend="${sortField == 'status' ? (sortDir == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"
+                   th:classappend="${sortField == 'leftAt' ? (sortDir == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"
                    style="margin-left: 5px; opacity: 0.7;"></i>
               </a>
             </th>
@@ -147,6 +158,8 @@
               </div>
             </td>
             <td th:text="${#temporals.format(member.joinedAt, 'dd-MM-yyyy')}"></td>
+
+            <td th:text="${member.leftAt != null ? #temporals.format(member.leftAt, 'dd-MM-yyyy') : '-'}"></td>
             <td>
                  <span th:class="|badge ${member.status == 'ACTIVE' ? 'badge-success' : 'badge-secondary'}|"
                        th:text="${member.status}"></span>
@@ -154,12 +167,6 @@
             <td class="action-buttons" style="justify-content: center;">
               <a th:href="@{/admin/users/{id}(id=${member.userId})}" class="btn-icon btn-view" title="View">
                 <i class="fas fa-eye"></i>
-              </a>
-              <a th:href="@{/admin/projects/{pid}/members/{mid}/remove(pid=${project.id},mid=${member.id})}"
-                 class="btn-icon btn-delete"
-                 onclick="return confirm('Are you sure you want to remove this member?');"
-                 title="Remove">
-                <i class="fas fa-trash"></i>
               </a>
             </td>
           </tr>

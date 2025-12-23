@@ -115,20 +115,28 @@
             <i class="fas fa-eye"></i>
           </a>
 
-          <a th:href="@{/admin/projects/edit/{id}(id=${project.id})}" class="btn-icon btn-edit" title="Edit">
-            <i class="fas fa-edit"></i>
-          </a>
+          <th:block th:with="isLocked=${project.status.toString() == 'COMPLETED' or project.status.toString() == 'CANCELLED'},
+                   editUrl=@{/admin/projects/edit/{id}(id=${project.id})}">
 
-          <form th:action="@{/admin/projects/delete/{id}(id=${project.id})}" method="post" style="display: inline;">
-            <button type="submit"
-                    class="btn-icon btn-delete"
-                    th:title="${(project.status.toString() == 'COMPLETED' or project.status.toString() == 'CANCELLED') ? 'Cannot delete completed or cancelled project' : 'Delete'}"
-                    th:data-project-name="${project.name}"
-                    th:disabled="${project.status.toString() == 'COMPLETED' or project.status.toString() == 'CANCELLED'}"
-                    onclick="return confirm('Bạn có chắc chắn muốn huỷ dự án \'' + this.getAttribute('data-project-name') + '\' không? Hành động này sẽ vô hiệu hoá các thành viên.');">
-              <i class="fas fa-trash"></i>
-            </button>
-          </form>
+            <a th:href="${isLocked} ? null : ${editUrl}"
+               class="btn-icon btn-edit"
+               th:title="${isLocked ? 'Cannot edit completed/cancelled project' : 'Edit'}"
+               th:style="${isLocked ? 'opacity: 0.3; cursor: not-allowed; pointer-events: none; color: gray;' : ''}">
+              <i class="fas fa-edit"></i>
+            </a>
+
+            <form th:action="@{/admin/projects/delete/{id}(id=${project.id})}" method="post" style="display: inline;">
+              <button type="submit"
+                      class="btn-icon btn-delete"
+                      th:disabled="${isLocked}"
+                      th:title="${isLocked ? 'Cannot delete completed or cancelled project' : 'Delete'}"
+                      th:style="${isLocked ? 'opacity: 0.3; cursor: not-allowed;' : ''}"
+                      th:data-project-name="${project.name}"
+                      onclick="return confirm('Bạn có chắc chắn muốn huỷ dự án \'' + this.getAttribute('data-project-name') + '\' không? Hành động này sẽ vô hiệu hoá các thành viên.');">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+          </th:block>
         </td>
       </tr>
       </tbody>
