@@ -93,7 +93,10 @@ public class SkillServiceImpl implements SkillService {
         Skill skill = skillRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Skill not found with id: " + id));
         
-        skill.setDeletedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        String deletedSuffix = "_deleted_" + now.toEpochSecond(java.time.ZoneOffset.UTC);
+        skill.setName(skill.getName() + deletedSuffix);
+        skill.setDeletedAt(now);
         skillRepository.save(skill);
     }
         

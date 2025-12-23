@@ -85,7 +85,11 @@ public class PositionServiceImpl implements PositionService {
         Position position = positionRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Position not found with id: " + id));
         
-        position.setDeletedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        String deletedSuffix = "_deleted_" + now.toEpochSecond(java.time.ZoneOffset.UTC);
+        position.setName(position.getName() + deletedSuffix);
+        position.setAbbreviation(position.getAbbreviation() + deletedSuffix);
+        position.setDeletedAt(now);
         positionRepository.save(position);
         
         log.info("Position deleted successfully with id: {}", id);

@@ -239,7 +239,10 @@ public class UserServiceImpl implements UserService {
                     return new ResourceNotFoundException("User not found with ID: " + userId);
                 });
 
-        user.setDeletedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        String deletedSuffix = "_deleted_" + now.toEpochSecond(java.time.ZoneOffset.UTC);
+        user.setEmail(user.getEmail() + deletedSuffix);
+        user.setDeletedAt(now);
         userRepository.save(user);
 
         log.info("User deleted successfully with ID: {}", userId);

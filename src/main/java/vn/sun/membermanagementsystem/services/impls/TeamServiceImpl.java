@@ -176,14 +176,9 @@ public class TeamServiceImpl implements TeamService {
             log.info("Removed member {} from team {}", member.getUser().getId(), id);
         }
 
-        // Rename team with .deleted suffix before soft delete
-        String originalName = team.getName();
-        if (!originalName.endsWith(".deleted")) {
-            team.setName(originalName + ".deleted");
-        }
-
-        // Perform soft delete
-        team.setDeletedAt(LocalDateTime.now());
+        String deletedSuffix = "_deleted_" + now.toEpochSecond(java.time.ZoneOffset.UTC);
+        team.setName(team.getName() + deletedSuffix);
+        team.setDeletedAt(now);
         teamRepository.save(team);
 
         log.info("Team soft deleted successfully with ID: {}, renamed to: {}", id, team.getName());
